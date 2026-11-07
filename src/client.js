@@ -26,6 +26,12 @@ export const inject=['slots'];
 export function apply(ctx) {ctx.slots.inject('settings.section',()=>ctx.slots.register({name:'settings.section',id:'chatgpt',order:11,label:()=> 'ChatGPT'},ChatGPT));ctx.slots.inject('sidebar.footer.action',()=>ctx.slots.register({name:'sidebar.footer.action',id:'chatgpt-usage',order:-2},UsageBalance));}
 
 function windowLabel(minutes) {return minutes===10080?'Weekly':minutes===300?'5-hour':minutes%1440===0?`${minutes/1440}-day`:minutes%60===0?`${minutes/60}-hour`:`${minutes}-minute`;}
+function resetCountdown(resetsAt) {
+ const minutes=Math.max(0,Math.ceil((resetsAt*1000-Date.now())/60000));
+ if(minutes===0)return 'Resetting soon';
+ const days=Math.floor(minutes/1440),hours=Math.floor(minutes%1440/60),mins=minutes%60;
+ return 'Resets in '+[days?`${days}d`:null,hours?`${hours}h`:null,mins?`${mins}m`:null].filter(Boolean).join(' ');
+}
 function UsageBalance() {
  const [data,setData]=React.useState({status:'loading',buckets:[]});const [open,setOpen]=React.useState(false);
  const [busy,setBusy]=React.useState(false);
@@ -49,7 +55,7 @@ function UsageBalance() {
  open&&createPortal(h('section',{ref:panel,role:'dialog','aria-label':'ChatGPT usage balance',style:{position:'fixed',...position,width:320,maxWidth:'calc(100vw - 20px)',boxSizing:'border-box',padding:'14px 16px 10px',borderRadius:20,border:'1px solid var(--dsw-alias-border-l1, #454545)',background:'#2c2c2c',color:'var(--dsw-alias-label-primary, #f4f4f4)',boxShadow:'0 8px 30px #0003',zIndex:2000,fontFamily:'inherit'}},
  h('div',{style:{fontSize:14,lineHeight:'22px',color:'var(--dsw-alias-label-tertiary, #999)'}},`Usage source: Your ${plan} plan`),h('div',{style:rule}),
  data.status==='loading'&&h('p',null,'Loading usage…'),data.status==='signed-out'&&h('p',null,'Sign in through Settings → ChatGPT.'),data.status==='unavailable'&&h('p',null,'Usage unavailable. Try again shortly.'),
- ...windows.map(w=>h('div',{key:w.durationMinutes,style:row,title:w.resetsAt?`Resets ${new Date(w.resetsAt*1000).toLocaleString()}`:undefined},h('span',null,`${windowLabel(w.durationMinutes)} limit`),h('span',null,`${Math.round(w.remainingPercent)}% left`))),
+ ...windows.map(w=>h('div',{key:w.durationMinutes,style:{padding:'9px 0'},title:w.resetsAt?`Resets ${new Date(w.resetsAt*1000).toLocaleString()}`:undefined},h('div',{style:{...row,padding:0}},h('span',null,`${windowLabel(w.durationMinutes)} limit`),h('span',null,`${Math.round(w.remainingPercent)}% left`)),w.resetsAt&&h('div',{style:{fontSize:12,lineHeight:'18px',marginTop:3,color:'var(--dsw-alias-label-tertiary, #999)'}},resetCountdown(w.resetsAt)))),
  primary&&h('div',{style:row},h('span',null,'Credits'),h('span',null,primary.credits?.unlimited?'Unlimited':primary.credits?.balance!=null?`${primary.credits.balance} credits`:'Unavailable')),
  h('div',{style:rule}),h('a',{href:'https://chatgpt.com/codex/settings/usage',target:'_blank',rel:'noopener noreferrer',style:{display:'block',padding:'5px 0',fontSize:14,lineHeight:'22px',color:'inherit',textDecoration:'none'}},'Manage usage')),document.body));
 }
